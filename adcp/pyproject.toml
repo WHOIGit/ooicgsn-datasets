@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+ 
+[project]
+name = "adcp"
+version = "0.1.0"
+description = "End-to-end processing pipeline for OOI moored ADCP data"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "pandas",
+    "xarray",
+    "scipy",
+    "matplotlib",
+    "h5netcdf",
+    "pyyaml",
+    "ooinet",
+    "ooi-data-explorations",
+]
+ 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["adcp*"]
+ 
+[project.scripts]
+process-adcp = "scripts.process_adcp:main"
