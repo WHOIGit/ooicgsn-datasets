@@ -18,4 +18,5 @@ physics   : oceanographic formulae (sound speed, etc.)
 from . import download, merge, ctd, gap_fill, qc, regrid, cf, physics
  
 __version__ = "0.1.0"
-__all__ = ["download", "merge", "ctd", "gap_fill", "qc", "regrid", "cf", "physics"]
+__all__ = ["cf", "ctd_calibration", "ctd", "download", "gap_fill",
+           "merge", "ocean_gap_fill", "physics", "qc", "regrid"]
