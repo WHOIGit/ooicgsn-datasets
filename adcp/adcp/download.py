@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from ooi_data_explorations.common import load_kdata
+from ooi_data_explorations.common import load_kdata, get_sensor_information
 from ooi_data_explorations.combine_data import combine_datasets
 from ooi_data_explorations.uncabled import process_ctdbp
 
@@ -56,25 +56,18 @@ def sanitize_attrs(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def _decode_serial_numbers(meta_ds: xr.Dataset) -> xr.Dataset:
+def _get_serial_number(refdes, deployment) -> str:
     """
     Decode byte-array serial numbers in OOI metadata datasets to plain strings.
     """
-    serial_numbers = np.array([
-        b"".join(row.tolist()).decode("utf-8")
-        for row in meta_ds["serial_number"].values
-    ])
-    meta_ds["serial_number"] = xr.DataArray(
-        serial_numbers,
-        coords={"time": meta_ds["time"]},
-        dims=["time"],
-    )
-    return meta_ds
+    site, node, sensor = _split_refdes(refdes)
+    sensor_info = get_sensor_information(site, node, sensor, deployment)
+    serial_number = sensor_info[0].get('sensor').get('serialNumber', "-9999999")
+    return serial_number
 
 
 def _assign_serial_numbers(
     ds: xr.Dataset,
-    meta_ds: xr.Dataset,
     deployments: np.ndarray,
 ) -> xr.Dataset:
     """
@@ -82,9 +75,12 @@ def _assign_serial_numbers(
     dataset. Adds a string ``serial_number`` variable aligned on time.
     """
     ds["serial_number"] = (["time"], np.empty(ds["time"].shape, dtype="U20"))
+    # Build refdes from the dataset attrs
+    site, node, sensor = ds.attrs['subsite'], ds.attrs['node'], ds.attrs['sensor']
+    refdes = "-".join((site, node, sensor))
     for d in deployments:
-        idx_meta, = np.where(meta_ds["deployment"] == d)
-        sn = np.sort(np.unique(meta_ds["serial_number"][idx_meta]))[-1]
+        # Get the serial number
+        sn = _get_serial_number(refdes, d)
         idx_data, = np.where(ds["deployment"] == d)
         ds["serial_number"].values[idx_data] = sn
     return ds
@@ -112,7 +108,6 @@ def download_adcp(
     os.makedirs(output_dir, exist_ok=True)
     refdes  = config["refdes"]
     streams = config["streams"]
-    meta_streams = config.get("streams_meta", {})
 
     site, node, sensor = _split_refdes(refdes)
 
@@ -122,14 +117,10 @@ def download_adcp(
     hdata = load_kdata(site, node, sensor, "recovered_host", streams["recovered_host"], tag=f"*{refdes}*.nc")
     idata = load_kdata(site, node, sensor, "recovered_inst", streams["recovered_inst"], tag=f"*{refdes}*.nc")
 
-    # Metadata (serial numbers, calibration)
-    meta_tdata = load_kdata(site, node, sensor, "telemetered", meta_streams.get("telemetered", ""), tag=f"*{refdes}*.nc")
-    meta_tdata = _decode_serial_numbers(meta_tdata)
-
     # Assign serial numbers across all streams
-    deployments = np.unique(tdata["deployment"])
+    deployments = np.unique(idata["deployment"])
     for ds in (tdata, hdata, idata):
-        _assign_serial_numbers(ds, meta_tdata, deployments)
+        _assign_serial_numbers(ds, deployments)
 
     # Sanitize and save
     paths = {}
@@ -137,7 +128,6 @@ def download_adcp(
         ("telemetered",    tdata),
         ("recovered_host", hdata),
         ("recovered_inst", idata),
-        ("meta",           meta_tdata),
     ]:
         ds   = sanitize_attrs(ds)
         path = os.path.join(output_dir, f"{refdes}.{name}.raw.nc")
@@ -184,6 +174,8 @@ def download_ctd(
     ctd_idata = process_ctdbp.ctdbp_instrument(ctd_idata)
 
     ctd = combine_datasets(ctd_tdata, ctd_hdata, ctd_idata, None)
+
+    ctd = sanitize_attrs(ctd)
 
     path = os.path.join(output_dir, f"{ctd_refdes}.merged.nc")
     ctd.to_netcdf(path, format="netcdf4", engine="h5netcdf")

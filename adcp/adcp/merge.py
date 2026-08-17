@@ -235,7 +235,10 @@ def drop_processing_vars(ds: xr.Dataset, extra: list[str] | None = None) -> xr.D
         "int_ctd_pressure", "non_zero_depth", "num_cells", "ensemble_number",
         "transducer_depth", "sysconfig_vertical_orientation",
         "ctdmo_ghqr_imodem_instrument_recovered-depth",
-        "bin_depths_qc_summary_flag",
+        "bin_depths_qc_summary_flag", "ctdmo_ghqr_sio_mule_instrument-depth",
+        "subsampling_parameter", "sio_controller_timestamp", "velocity_po_up_flag",
+        "velocity_po_error_flag", "velocity_po_north_flag", "unit_id",
+        "firmware_version", "velocity_po_east_flag", "firmware_revision"
     ]
     to_drop = defaults + (extra or [])
     return ds.drop_vars([v for v in to_drop if v in ds.variables])

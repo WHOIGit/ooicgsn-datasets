@@ -143,6 +143,10 @@ def merge_ctd_into_adcp(
     ])) or adcp.attrs.get("source", "unknown")
 
     adcp["sea_water_pressure"] = (["time"], adcp["non_zero_pressure"].values)
+    # Check what the existing units are
+    units = adcp['non_zero_pressure'].attrs['units']
+    if units == 'daPa':
+        adcp["sea_water_pressure"] = adcp["sea_water_pressure"] / 1000
     adcp["sea_water_pressure"].attrs = {
         "standard_name": "sea_water_pressure",
         "long_name":     "sea water pressure",
@@ -157,7 +161,7 @@ def merge_ctd_into_adcp(
         chen_millero(
             adcp["sea_water_temperature"].values,
             adcp["sea_water_practical_salinity"].values,
-            adcp["non_zero_pressure"].values,
+            adcp["sea_water_pressure"].values,
         ),
         2,
     )
