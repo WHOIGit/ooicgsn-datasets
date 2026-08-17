@@ -92,6 +92,6 @@ See `environment.yml`. Key packages:
 
 ## Citation
 
-Ocean Observatories Initiative (OOI) data accessed via the M2M API.
-QARTOD flag conventions: https://ioos.noaa.gov/project/qartod
+Ocean Observatories Initiative (OOI) data accessed via the M2M API. <br>
+QARTOD flag conventions: https://ioos.noaa.gov/project/qartod <br>
 CF Conventions 1.11: http://cfconventions.org
