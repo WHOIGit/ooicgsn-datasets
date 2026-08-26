@@ -4,7 +4,7 @@ adcp.regrid
 Interpolate ADCP data from native (time, bin) coordinates onto a
 common (time, bin_depths) depth grid.
 
-Exact bin_depths vary between different deployments, so
+For each timestep, bin_depths may vary (e.g. due to tidal heave), so
 interpolation is performed independently per timestep using np.interp.
 
 Float variables  : linear interpolation, no extrapolation (NaN outside range)
@@ -59,6 +59,10 @@ def regrid_adcp(
     out_attrs = {}
 
     # ── Float variables: linear interpolation ─────────────────────────────────
+    # Only mask on bin_depths validity — do NOT mask on data values so that
+    # NaNs in the source data (fill values, upstream gaps) are interpolated
+    # across rather than propagated as holes in the regridded output.
+    # QC flags carry the data-quality information; regridding is geometry only.
     for var in float_vars:
         values = ds[var].values
         result = np.full((n_time, n_depth), np.nan, dtype=float)
@@ -67,7 +71,7 @@ def regrid_adcp(
             depths_i = bin_depth[i]
             vals_i   = values[i]
 
-            valid = np.isfinite(depths_i) & np.isfinite(vals_i)
+            valid = np.isfinite(depths_i)           # depth-only mask
             if valid.sum() < 2:
                 continue
 
@@ -81,6 +85,7 @@ def regrid_adcp(
         out_attrs[var] = ds[var].attrs
 
     # ── Integer variables: max of two bracketing bins ─────────────────────────
+    # Same principle — mask on depth validity only.
     for var in int_vars:
         values = ds[var].values.astype(float)   # float so NaN is representable
         result = np.full((n_time, n_depth), np.nan, dtype=float)
@@ -89,7 +94,7 @@ def regrid_adcp(
             depths_i = bin_depth[i]
             vals_i   = values[i]
 
-            valid = np.isfinite(depths_i) & np.isfinite(vals_i)
+            valid = np.isfinite(depths_i)           # depth-only mask
             if valid.sum() < 2:
                 continue
 

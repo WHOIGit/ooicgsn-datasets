@@ -9,15 +9,13 @@ across streams and dropping variables that are all-NaN or instrument-internal.
 from __future__ import annotations
 
 import xarray as xr
+import numpy as np
 
 from ooi_data_explorations.combine_data import combine_datasets
 
 
 # ── Variable crosswalk ────────────────────────────────────────────────────────
-# Maps the per-stream variable names onto a common set of canonical names.
-# Only variables with a non-None inst_name are kept after renaming.
-# Add rows here to support new ADCP models / firmware versions.
-
+# Maps the per-stream variable names onto a common set of more common names.
 CROSSWALK: list[dict] = [
     {
         "host_name": "adcps_jln_upward_seawater_velocity2",
@@ -201,6 +199,55 @@ def _apply_crosswalk(
     return ds
 
 
+def _deduplicate_times(ds: xr.Dataset) -> xr.Dataset:
+    """
+    Remove duplicate timestamps, preferring data in this order:
+    recovered_inst > recovered_host > telemetered.
+
+    Expects a 'stream' variable on the time axis encoding source priority.
+    Falls back to keeping the first occurrence if 'stream' is absent.
+    """
+    times = ds["time"].values
+    unique_times, counts = np.unique(times, return_counts=True)
+
+    if not (counts > 1).any():
+        return ds  # no duplicates — fast exit
+
+    if "stream" in ds:
+        # Lower number = higher priority
+        priority_map = {"recovered_inst": 0, "recovered_host": 1, "telemetered": 2}
+        priority = np.array([
+            priority_map.get(s, 99) for s in ds["stream"].values
+        ])
+        # Sort by time first, then priority so that for each timestamp
+        # the highest-priority record sorts to the top
+        order    = np.lexsort((priority, times.astype("int64")))
+    else:
+        # No stream variable — sort by time only, keep first occurrence
+        order = np.argsort(times.astype("int64"), kind="stable")
+
+    ds = ds.isel(time=order)
+
+    # Drop duplicates — after sorting, first occurrence of each timestamp
+    # is the highest-priority one
+    _, first_idx = np.unique(ds["time"].values, return_index=True)
+    return ds.isel(time=first_idx)
+
+
+def _fix_pressure_units(ds: xr.Dataset) -> xr.Dataset:
+    """
+    Convert non_zero_pressure from daPa to dbar if needed.
+    1 daPa = 0.001 dbar  (1 dbar = 1000 daPa)
+    """
+    if "non_zero_pressure" not in ds:
+        return ds
+    units = ds["non_zero_pressure"].attrs.get("units", "")
+    if units.lower() in ("dapa", "dapa"):
+        ds["non_zero_pressure"] = ds["non_zero_pressure"] / 1000.0
+        ds["non_zero_pressure"].attrs["units"] = "dbar"
+    return ds
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def drop_null_vars(ds: xr.Dataset) -> xr.Dataset:
@@ -252,8 +299,6 @@ def merge_adcp_streams(
     deployments_to_drop: list[int] | None = None,
 ) -> xr.Dataset:
     """
-    Rename, clean, and merge the three ADCP data streams.
-
     Parameters
     ----------
     tdata               : telemetered Dataset
@@ -267,26 +312,51 @@ def merge_adcp_streams(
     xr.Dataset : merged, cleaned Dataset on a unified time axis
     """
     cw = crosswalk or CROSSWALK
-
-    # Apply crosswalk renames
     hdata = _apply_crosswalk(hdata, "host", cw)
     tdata = _apply_crosswalk(tdata, "tele", cw)
-    # idata variable names are already canonical
-
-    # Drop all-NaN variables before merging
-    tdata = drop_null_vars(tdata)
     hdata = drop_null_vars(hdata)
+    tdata = drop_null_vars(tdata)
     idata = drop_null_vars(idata)
 
-    # Merge streams
-    ds = combine_datasets(tdata, hdata, idata, None)
+    # Tag priority — lower = higher priority
+    idata["_priority"] = xr.Variable("time", np.zeros(idata.sizes["time"], dtype=np.int8))
+    hdata["_priority"] = xr.Variable("time", np.ones(hdata.sizes["time"],  dtype=np.int8))
+    tdata["_priority"] = xr.Variable("time", np.full(tdata.sizes["time"], 2, dtype=np.int8))
 
-    # Drop OOI-internal and existing QC variables
+    # Reset bin coord to plain 0-indexed integers so outer join
+    # pads correctly across streams with different bin counts
+    idata = idata.assign_coords(bin=np.arange(idata.sizes["bin"]))
+    hdata = hdata.assign_coords(bin=np.arange(hdata.sizes["bin"]))
+    tdata = tdata.assign_coords(bin=np.arange(tdata.sizes["bin"]))
+
+    # Fix pressure if needed
+    idata = _fix_pressure_units(idata)
+    hdata = _fix_pressure_units(hdata)
+    tdata = _fix_pressure_units(tdata)
+
+    # Concatenate all streams — time axis will have duplicates
+    combined = xr.concat(
+        [idata, hdata, tdata],
+        dim="time",
+        join="outer",
+        combine_attrs="override",
+    )
+
+    # Sort by time then priority so best source sorts first per timestamp
+    order    = np.lexsort((combined["_priority"].values, combined["time"].values.astype("int64")))
+    combined = combined.isel(time=order)
+
+    # np.unique with return_index=True returns the first occurrence of each
+    # unique time — since we sorted by priority, first = highest priority.
+    # This replaces groupby().first() with a single O(n log n) numpy call.
+    _, first_idx = np.unique(combined["time"].values, return_index=True)
+    ds = combined.isel(time=first_idx)
+    
+    ds = ds.drop_vars("_priority", errors="ignore")
     ds = drop_internal_vars(ds)
 
-    # Drop specified deployments
     if deployments_to_drop:
-        for dep in deployments_to_drop:
-            ds = ds.where(ds["deployment"] != dep, drop=True)
+        mask = ~np.isin(ds["deployment"].values, deployments_to_drop)
+        ds   = ds.isel(time=mask)
 
     return ds
