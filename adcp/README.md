@@ -77,14 +77,14 @@ adcp/
 ## Adding a New Instrument
 
 1. Copy an existing config YAML and update the fields.
-2. Run `python scripts/process_adcp.py config/<new-refdes>.yml`.
+2. Run `python scripts/process_adcp.py config/<new-refdes>.yaml`.
 
-No code changes required for instruments of the same type (ADCPS JLN).
+No code changes required for instruments of the same type (ADCPS-J/L/N).
 For different ADCP models, extend the crosswalk in `adcp/merge.py`.
 
 ## Dependencies
 
-See `environment.yml`. Key packages:
+See `environment.yaml`. Key packages:
 - `xarray`, `numpy`, `pandas`, `scipy`
 - `ooi_data_explorations` (OOI processing utilities)
 - `pyyaml`
