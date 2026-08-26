@@ -50,7 +50,7 @@ qc:
   roll_fail_range:    [-2000, 2000]    # cdegrees (converted to degrees in processing)
   roll_suspect_range: [-1500, 1500]
   pitch_fail_range:   [-2000, 2000]
-  pitch_suspect_range:[-1500, 1500]
+  pitch_suspect_range: [-1500, 1500]
 
   # QARTOD gross range — scalar CTD variables
   temperature_fail_range: [-5,  35]   # °C

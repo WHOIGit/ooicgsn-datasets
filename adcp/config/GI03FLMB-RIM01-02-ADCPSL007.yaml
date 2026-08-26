@@ -1,6 +1,6 @@
 # ── Instrument identity ───────────────────────────────────────────────────────
-refdes:     GI03FLMA-RIM01-02-ADCPSL003
-ctd_refdes: GI03FLMA-RIM01-02-CTDMOG048
+refdes:     GI03FLMB-RIM01-02-ADCPSL007
+ctd_refdes: GI03FLMB-RIM01-02-CTDMOG068
 
 # ── OOINet data streams ───────────────────────────────────────────────────────
 streams:
@@ -15,7 +15,7 @@ ctd_streams:
 
 # ── Deployments ───────────────────────────────────────────────────────────────
 # List deployment numbers to exclude from processing (e.g. incomplete metadata)
-deployments_to_drop: [6, 11]
+deployments_to_drop: [3, 11]
 
 # ── Depth regridding ──────────────────────────────────────────────────────────
 regrid:
@@ -26,7 +26,7 @@ regrid:
 # ── Bottle matching ───────────────────────────────────────────────────────────
 # Regex pattern (case-insensitive) matched against the 'Target Asset' column
 # of the water-sampling CSV to identify samples from this mooring.
-mooring_pattern: "FLMA"
+mooring_pattern: "FLMB"
 
 # ── QC thresholds ─────────────────────────────────────────────────────────────
 qc:
