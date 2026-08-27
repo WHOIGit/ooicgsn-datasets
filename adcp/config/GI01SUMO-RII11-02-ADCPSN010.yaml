@@ -32,6 +32,7 @@ regrid:
 # Regex pattern (case-insensitive) matched against the 'Target Asset' column
 # of the water-sampling CSV to identify samples from this mooring.
 mooring_pattern: "SUMO"
+comparison_window: "6h"    # pandas Timedelta string, e.g. "1h", "30min", "4h"
 
 # ── QC thresholds ─────────────────────────────────────────────────────────────
 qc:
@@ -42,7 +43,8 @@ qc:
   # TRDI instrument QC (ADCP Longranger 75 kHz, 10 m cells, 80-ping ensemble)
   correlation_good:       115      # counts — above = good
   correlation_suspect:    63       # counts — above = suspect, below = fail
-  percent_good_threshold: 100      # percent — minimum acceptable
+  percent_good_good:      100      # percent — above = good
+  percent_good_suspect:   98       # percent — above = suspect, below = fail
   error_velocity_suspect: 0.036    # m/s  (3.6 cm/s)
   error_velocity_fail:    0.072    # m/s  (7.2 cm/s)
 
