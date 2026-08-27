@@ -105,6 +105,7 @@ def step_calibrate_ctd(config: dict, data_dir: str, results_dir: str) -> xr.Data
         mooring_pressure        = qc_cfg.get("mooring_pressure",        500.0),
         mooring_pressure_window = qc_cfg.get("mooring_pressure_window", 100.0),
         mooring_pattern         = config.get("mooring_pattern",         "SUMO"),
+        comparison_window       = config.get("comparison_window",       "2h"),
     )
 
     ctd_filled, _ = gap_fill.fill_ctd_gaps(cal_ctd)

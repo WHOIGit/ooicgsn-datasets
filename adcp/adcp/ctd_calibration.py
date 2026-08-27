@@ -987,6 +987,7 @@ def calibrate_insitu_ctd_ds(
         deployment_var:          str   = INSITU_DEP_COL,
         mooring_pressure:        float = MOORING_PRESSURE_NOMINAL,
         mooring_pressure_window: float = MOORING_PRESSURE_WINDOW,
+        comparison_window:       str   = "2h",          # ← new
         verbose:                 bool  = True,
 ) -> tuple["xr.Dataset", dict[int, DeploymentCorrection], pd.DataFrame]:
     """
@@ -1073,14 +1074,18 @@ def calibrate_insitu_ctd_ds(
     assigned = _assign_samples_to_deployments(dep_bounds, samples)
 
     corrections: dict[int, DeploymentCorrection] = {}
+    
+    # Convert string to Timedelta so callers can pass e.g. "4h" or "30min"
+    _window = pd.Timedelta(comparison_window)
+
     for dep, (t_start, t_end) in dep_bounds.items():
         dep_data = insitu[insitu[INSITU_DEP_COL] == float(dep)].copy()
         start_comps, end_comps = [], []
         for s in assigned[dep]["start"]:
-            cp = compare_insitu_to_sample(dep_data, s, role="start")
+            cp = compare_insitu_to_sample(dep_data, s, window=_window, role="start")
             if cp: start_comps.append(cp)
         for s in assigned[dep]["end"]:
-            cp = compare_insitu_to_sample(dep_data, s, role="end")
+            cp = compare_insitu_to_sample(dep_data, s, window=_window, role="end")
             if cp: end_comps.append(cp)
 
         if verbose:
