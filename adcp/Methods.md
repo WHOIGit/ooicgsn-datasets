@@ -1,13 +1,3 @@
----
-jupytext:
-  formats: md:myst
-  text_representation:
-    extension: .md
-    format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.19.4
----
-
 # Background
 
 The OOI deploys Acoustic Doppler Current Profilers (ADCPs) as a core physical oceanographic instrument across all arrays to measure water column velocity. ADCPs use acoustics to measure three-dimensional water-current velocity profiles above or below the sensor. Sound waves ranging from 75 kHz to 1 MHz, depending on model of ADCP, emitted by the profiler scatter off suspended particles and return to the sensor, which calculates velocity by measuring the Doppler shift of the returning signal. Higher frequencies provide finer vertical resolution at shallower depths, while lower frequencies penetrate deeper into the water column.
