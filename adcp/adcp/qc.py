@@ -316,7 +316,7 @@ def error_velocity_qc(
 def percent_good_qc(
     ds: xr.Dataset,
     good_threshold: float = 100,
-    suspect_threshold: float = 100,
+    suspect_threshold: float = 50,
 ) -> np.ndarray:
     """TRDI percent-good QC — wraps process_adcp."""
     return process_adcp.percent_good_qc(ds, good_threshold, suspect_threshold)
@@ -357,9 +357,9 @@ def compute_sensor_engineering_qc(
     qc_cfg = config.get("qc", {})
 
     # TRDI instrument QC
-    cor_mag  = correlation_magnitude_qc(ds, qc_cfg.get("correlation_good", 115),    qc_cfg.get("correlation_suspect", 63))
+    cor_mag  = correlation_magnitude_qc(ds, qc_cfg.get("correlation_good", 115),         qc_cfg.get("correlation_suspect", 63))
     err_vel  = error_velocity_qc(ds,        qc_cfg.get("error_velocity_suspect", 0.036), qc_cfg.get("error_velocity_fail", 0.072))
-    per_good = percent_good_qc(ds,          qc_cfg.get("percent_good_threshold", 100),   qc_cfg.get("percent_good_threshold", 100))
+    per_good = percent_good_qc(ds,          qc_cfg.get("percent_good_good", 100),        qc_cfg.get("percent_good_suspect", 100))
     side     = sidelobe_qc(ds)
 
     # Roll / pitch — broadcast 1-D time flag to (time, bin)
