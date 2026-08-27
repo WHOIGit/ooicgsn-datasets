@@ -18,7 +18,7 @@ Quality control (QC) of sensor engineering data follows recommendations from Tel
 
 Bins affected by sidelobe interference are identified following Lentz et al. (2022):
 
-$$z_{ic} = h_a \left[1 - \cos(\theta)\right] + \frac{3\,\Delta z}{2}$$
+$$z_{ic} = h_a \left[1 - \cos(\theta)\right] + \frac{3\Delta z}{2}$$
 
 where $z_{ic}$ is the depth above which sidelobe interference is expected, $h_a$ is the transducer face depth, $\theta$ is the beam angle, and $\Delta z$ is the cell size. Bins shallower than $z_{ic}$ are flagged as bad.
 
@@ -32,7 +32,7 @@ Finally, dataset metadata are aligned with CF-1.11 conventions.
 
 Prior to being merged into the ADCP dataset, co-located CTD data are processed separately. On a deployment-by-deployment basis, temperature and salinity observations from the co-located CTD are corrected for sensor drift and validated against discrete observations collected via Niskin bottle and ship CTD during deployment and recovery cruises. Gaps in the CTD record are then filled by fitting the following model independently to temperature and salinity:
 
-$$V(t) = \beta_0 + \beta_1 t + \beta_2 \max(0,\, t - t_{\text{break}}) + A_1\sin(2\pi t) + B_1\cos(2\pi t) + A_2\sin(4\pi t) + B_2\cos(4\pi t)$$
+$$V(t) = \beta_0 + \beta_1 t + \beta_2 \max(0\, t - t_{\text{break}}) + A_1\sin(2\pi t) + B_1\cos(2\pi t) + A_2\sin(4\pi t) + B_2\cos(4\pi t)$$
 
 where $t$ is decimal year and $t_{\text{break}}$ is determined via grid search independently for each variable, such that temperature and salinity inflection points need not coincide. Gaps are identified as time steps exceeding a defined threshold; both extended gaps and isolated missing values are filled by evaluating the model at those times. The resulting gap-filled temperature and salinity records are then interpolated to the ADCP time basis.
 
