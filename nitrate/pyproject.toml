@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nitrate"
+version = "0.1.0"
+description = "End-to-end processing pipeline for OOI CGSN/Pioneer-NES and Irminger SUNA/NUTNR nitrate data"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "pandas",
+    "xarray",
+    "scipy",
+    "matplotlib",
+    "h5netcdf",
+    "pyyaml",
+    "ooi-data-explorations",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["nitrate*"]
+
+[project.scripts]
+process-nitrate = "scripts.process_nitrate:main"

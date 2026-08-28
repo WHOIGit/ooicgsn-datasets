@@ -1,0 +1,54 @@
+# ── Instrument identity ────────────────────────────────────────────────────
+refdes:  CP01CNSM-RID26-07-NUTNRB000
+array:   Pioneer-NES
+mooring: CNSM
+
+# This instrument sits on the NSIF and carries a co-located CTD, so no
+# METBK-derived T/S substitution is needed.
+met_refdes: null
+
+# ── OOINet data streams ───────────────────────────────────────────────────────
+streams:
+  telemetered:    suna_dcl_recovered
+  recovered_host: suna_dcl_recovered
+  recovered_inst: suna_instrument_recovered
+
+# ── Deployments ───────────────────────────────────────────────────────────────
+# The full deployment list is pulled from OOINet (list_deployments); list
+# deployment numbers to exclude here -- e.g. ISUS-era deployments predating
+# the spring-2018 SUNA swap (not covered by this pipeline -- see README), or
+# deployments with incomplete/unreliable metadata.
+deployments_to_drop: [1, 2, 3, 4, 5, 6, 7, 8]
+
+# ── Bottle matching ───────────────────────────────────────────────────────────
+# Root directory containing one <cruise>/Water_Sampling/*_Discrete_Summary.csv
+# per cruise. Cleaned via ooi_data_explorations.bottles.clean_data() during
+# the download step and cached to data/cleaned_bottle_data.csv.
+ship_cruise_dir: /path/to/ooi/cruise_data/pioneer-nes
+
+# ── Known metadata corrections ─────────────────────────────────────────────────
+# (deployment, serial_number) pairs to patch during the finalize stage, for
+# deployments where the reported instrument serial number is known to be wrong.
+serial_number_fixes: []
+
+# ── Output variables ───────────────────────────────────────────────────────────
+# Trimmed, renamed set of variables written to the final published NetCDF.
+save_vars:
+  - serial_number
+  - deployment
+  - sea_water_practical_salinity
+  - sea_water_temperature
+  - nitrate_concentration
+  - nitrate_sensor_quality_flag
+  - corrected_nitrate_concentration
+  - corrected_nitrate_concentration_qc_flag
+  - drift_corrected_nitrate
+  - drift_corrected_nitrate_qc_flag
+  - bottle_corrected_nitrate
+  - bottle_corrected_nitrate_qc_flag
+  - corrected_nitrate_concentration_mad
+
+# ── Output paths ─────────────────────────────────────────────────────────────
+paths:
+  data_dir:    data/Pioneer-NES/CNSM/
+  results_dir: results/
