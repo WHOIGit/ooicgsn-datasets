@@ -1,0 +1,19 @@
+name: ooi-cgsn-nitrate
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - xarray
+  - scipy
+  - matplotlib
+  - h5netcdf
+  - netcdf4
+  - pyyaml
+  - jupyterlab
+  - ipykernel
+  - pip
+  - pip:
+      - ooi-data-explorations
