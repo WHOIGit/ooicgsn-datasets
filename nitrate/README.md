@@ -1,7 +1,7 @@
 # OOI SUNA/NUTNR Nitrate Processing
 
 [![Irminger dataset DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21629872.svg)](https://doi.org/10.5281/zenodo.21629872)
-[![Pioneer-NES dataset DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14908031.svg)](https://doi.org/10.5281/zenodo.14908031)
+[[![Pioneer-NES dataset DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14908031.svg)](https://doi.org/10.5281/zenodo.14908031)](https://doi.org/10.5281/zenodo.16986384)
 
 This repo contains an end-to-end pipeline for downloading, correcting, quality-controlling, and CF-aligning OOI CGSN/Pioneer-NES and Irminger Sea Submersible Ultraviolet Nitrate Analyzer (SUNA) data. The result is a validated, deployment-merged dissolved nitrate dataset for a given reference designator, temperature/salinity/pressure corrected using the Plant et al. (2023) update to the Sakamoto et al. (2009) algorithm, drift-corrected against post-cruise calibrations, and offset-corrected against shipboard discrete (bottle) samples.
 
