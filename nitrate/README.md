@@ -1,10 +1,28 @@
 # OOI SUNA/NUTNR Nitrate Processing
 
+[![Irminger dataset DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21629872.svg)](https://doi.org/10.5281/zenodo.21629872)
+[![Pioneer-NES dataset DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14908031.svg)](https://doi.org/10.5281/zenodo.14908031)
+
 This repo contains an end-to-end pipeline for downloading, correcting, quality-controlling, and CF-aligning OOI CGSN/Pioneer-NES and Irminger Sea Submersible Ultraviolet Nitrate Analyzer (SUNA) data. The result is a validated, deployment-merged dissolved nitrate dataset for a given reference designator, temperature/salinity/pressure corrected using the Plant et al. (2023) update to the Sakamoto et al. (2009) algorithm, drift-corrected against post-cruise calibrations, and offset-corrected against shipboard discrete (bottle) samples.
 
 ## Background
 
 OOI has deployed both the In-Situ Ultraviolet Spectrophotometer (ISUS) and the Submersible Ultraviolet Nitrate Analyzer (SUNA) for continuous, in-situ measurement of nitrate at the Pioneer-New England Shelf, Pioneer-Mid Atlantic Bight, and Global Irminger Sea arrays. SUNA datasets are delivered by OOI as "NUTNR" (Nutrient Sensor). ISUS datasets (pre spring-2018) are not covered by this pipeline, since known measurement issues make a quantitative data quality assessment difficult. The SUNA sensor replaced the ISUS sensors spring 2018. The SUNA was a major improvement in technology, with significant improvements in accuracy and precision. However, it still suffers from calibration drift due to lamp fatigue and biofouling as well as spectral interference due to bromide and fluorometric CDOM. Drift is corrected by application of post-cruise calibrations to recalculate the temperature-and-salinity corrected nitrate concentration following Plant et al (2023) and estimating a linear drift between pre-and-post cruise deployments. Validation is performed by comparison with discrete water samples collected during deployment/recovery of the sensors.
+
+## Published Data
+
+The final, published datasets produced by this pipeline are archived on
+Zenodo, one record per array:
+
+| Array | DOI |
+| --- | --- |
+| Irminger Sea | [10.5281/zenodo.21629872](https://doi.org/10.5281/zenodo.21629872) |
+| Pioneer-New England Shelf | [10.5281/zenodo.14908031](https://doi.org/10.5281/zenodo.14908031) |
+
+Each record covers every instrument (`config/*.yaml`) belonging to that
+array. When updating a published dataset, mint a new version under the
+same Zenodo record rather than a new one, and update the DOI badges above
+if Zenodo issues a new version-specific DOI.
 
 ## Overview
 
