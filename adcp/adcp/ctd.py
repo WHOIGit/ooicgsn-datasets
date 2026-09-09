@@ -26,6 +26,21 @@ except ImportError as e:
     ) from e
 
 
+def _build_mooring_pattern(pattern) -> str:
+    """
+    Accept either a string or list of strings and return a single
+    regex alternation pattern.
+
+    Examples
+    --------
+    "SUMO"           → "SUMO"
+    ["SUMO", "APEX"] → "SUMO|APEX"
+    """
+    if isinstance(pattern, list):
+        return "|".join(re.escape(p) for p in pattern)
+    return pattern
+
+
 def calibrate_ctd(
     ctd: xr.Dataset,
     bottle_path: str,
@@ -58,17 +73,13 @@ def calibrate_ctd(
     corrections : dict {deployment_id: DeploymentCorrection}
     stats       : per-comparison-point validation DataFrame
     """
-    # Override the module-level pattern in ctd_calibration before calling it.
-    # This avoids modifying ctd_calibration.py itself while still supporting
-    # arbitrary mooring identifiers from the config.
-    ctd_calibration.SUMO_PATTERN = re.compile(mooring_pattern, re.IGNORECASE)
-
     cal_ctd, corrections, stats = ctd_calibration.calibrate_insitu_ctd_ds(
         ds                      = ctd,
         water_samp_path         = bottle_path,
         output_dir              = output_dir,
         mooring_pressure        = mooring_pressure,
         mooring_pressure_window = mooring_pressure_window,
+        mooring_pattern         = _build_mooring_pattern(mooring_pattern),
         comparison_window       = comparison_window,
         verbose                 = verbose,
     )

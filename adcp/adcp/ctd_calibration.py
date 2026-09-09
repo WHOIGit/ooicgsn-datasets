@@ -40,18 +40,6 @@ import pandas as pd
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 # ── 1.  Configuration ─────────────────────────────────────────────────────────
-
-# SUMO target asset pattern (case-insensitive)
-SUMO_PATTERN = re.compile(r"SUMO", re.IGNORECASE)
-
-# Nominal mooring pressure and tolerance window (dbar) used to pick the
-# "mooring-depth" bottle from each CTD cast profile
-MOORING_PRESSURE_NOMINAL = 500.0   # dbar
-MOORING_PRESSURE_WINDOW  = 100.0   # ± dbar
-
-# Time window around a cast used to extract the in-situ median
-COMPARISON_WINDOW = pd.Timedelta("2h")
-
 # Minimum samples required inside the window to accept a comparison
 MIN_INSITU_POINTS = 5
 
@@ -173,14 +161,17 @@ class DeploymentCorrection:
 
 # ── 3.  Water-sample utilities ────────────────────────────────────────────────
 
-def load_and_filter_sumo_samples(ws_path: str) -> pd.DataFrame:
+def load_and_filter_sumo_samples(
+        ws_path: str,
+        pattern: str = "SUMO",
+    ) -> pd.DataFrame:
     """
     Load the water-sampling CSV and return only rows where Target Asset
     contains 'SUMO' (case-insensitive).  Parse timestamps.
     """
     ws = pd.read_csv(ws_path)
-    mask = ws[WS_TARGET_COL].astype(str).str.contains(SUMO_PATTERN.pattern,
-                                                        case=False, na=False)
+    mask = ws[WS_TARGET_COL].astype(str).str.contains(pattern,
+                                                      case=False, na=False)
     ws_sumo = ws[mask].copy()
     ws_sumo["_bottle_time"] = pd.to_datetime(
         ws_sumo[WS_BOTTLE_TIME_COL], utc=True, errors="coerce"
@@ -206,8 +197,8 @@ def _best_salinity(row: pd.Series) -> tuple[float, str]:
 
 
 def extract_mooring_depth_samples(ws_sumo: pd.DataFrame,
-                                   nominal_p: float = MOORING_PRESSURE_NOMINAL,
-                                   window_p:  float = MOORING_PRESSURE_WINDOW,
+                                   nominal_p: float,
+                                   window_p:  float,
                                    ) -> list[WaterSample]:
     """
     From all SUMO water-sampling rows, retain only those bottles whose
@@ -253,7 +244,7 @@ def extract_mooring_depth_samples(ws_sumo: pd.DataFrame,
 def compare_insitu_to_sample(
         insitu: pd.DataFrame,
         sample: WaterSample,
-        window: pd.Timedelta = COMPARISON_WINDOW,
+        window: pd.Timedelta,
         min_pts: int = MIN_INSITU_POINTS,
         role: str = "start",
 ) -> Optional[ComparisonPoint]:
@@ -429,6 +420,7 @@ def apply_corrections(
 def validation_stats(
         calibrated:  pd.DataFrame,
         corrections: dict[int, DeploymentCorrection],
+        window:      pd.Timedelta = pd.Timedelta("6h")
 ) -> pd.DataFrame:
     """
     For each comparison point, compute residual = (calibrated in-situ) − reference.
@@ -438,8 +430,8 @@ def validation_stats(
     for dep, dc in corrections.items():
         dep_data = calibrated[calibrated[INSITU_DEP_COL] == float(dep)]
         for cp in dc.comparisons:
-            t0 = cp.sample.bottle_time - COMPARISON_WINDOW
-            t1 = cp.sample.bottle_time + COMPARISON_WINDOW
+            t0 = cp.sample.bottle_time - window
+            t1 = cp.sample.bottle_time + window
             sub = dep_data[(dep_data[INSITU_TIME_COL] >= t0) &
                            (dep_data[INSITU_TIME_COL] <= t1)]
             if len(sub) == 0:
@@ -875,8 +867,9 @@ def calibrate_insitu_ctd(
         water_samp_path: str,
         output_csv:     str = "ctd_calibrated.csv",
         output_dir:     str = ".",
-        mooring_pressure:      float = MOORING_PRESSURE_NOMINAL,
-        mooring_pressure_window: float = MOORING_PRESSURE_WINDOW,
+        mooring_pressure:      float = 500,
+        mooring_pressure_window: float = 50,
+        mooring_pattern: str = "SUMO",
         verbose:        bool = True,
 ) -> tuple[pd.DataFrame, dict[int, DeploymentCorrection], pd.DataFrame]:
     """
@@ -985,9 +978,10 @@ def calibrate_insitu_ctd_ds(
         temp_var:                str   = INSITU_TEMP_COL,
         pres_var:                str   = INSITU_PRES_COL,
         deployment_var:          str   = INSITU_DEP_COL,
-        mooring_pressure:        float = MOORING_PRESSURE_NOMINAL,
-        mooring_pressure_window: float = MOORING_PRESSURE_WINDOW,
-        comparison_window:       str   = "2h",          # ← new
+        mooring_pressure:        float = 500,
+        mooring_pressure_window: float = 50,
+        mooring_pattern:         str   = "SUMO",
+        comparison_window:       str   = "6h",          # ← new
         verbose:                 bool  = True,
 ) -> tuple["xr.Dataset", dict[int, DeploymentCorrection], pd.DataFrame]:
     """
@@ -1050,9 +1044,9 @@ def calibrate_insitu_ctd_ds(
 
     # ── 2. Run the shared calibration pipeline ────────────────────────────────
     if verbose: print("Loading water-sampling data …")
-    ws_sumo = load_and_filter_sumo_samples(water_samp_path)
+    ws_sumo = load_and_filter_sumo_samples(water_samp_path, pattern=mooring_pattern)
     if verbose:
-        print(f"  SUMO water samples found: {len(ws_sumo)}")
+        print(f"  Mooring water samples found: ({mooring_pattern}): {len(ws_sumo)}")
 
     samples = extract_mooring_depth_samples(
         ws_sumo,
@@ -1097,7 +1091,7 @@ def calibrate_insitu_ctd_ds(
                                                       start_comps, end_comps)
 
     calibrated = apply_corrections(insitu, corrections)
-    stats      = validation_stats(calibrated, corrections)
+    stats      = validation_stats(calibrated, corrections, window=_window)
 
     if verbose:
         print_validation_report(corrections, stats)
