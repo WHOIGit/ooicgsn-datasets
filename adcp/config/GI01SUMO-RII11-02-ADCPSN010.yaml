@@ -31,14 +31,14 @@ regrid:
 # ── Bottle matching ───────────────────────────────────────────────────────────
 # Regex pattern (case-insensitive) matched against the 'Target Asset' column
 # of the water-sampling CSV to identify samples from this mooring.
-mooring_pattern: "SUMO"
+mooring_pattern: ["FLMA", "FLMB", "SUMO", "HYPM"]
 comparison_window: "6h"    # pandas Timedelta string, e.g. "1h", "30min", "4h"
 
 # ── QC thresholds ─────────────────────────────────────────────────────────────
 qc:
   # Bottle/CTD matching
   mooring_pressure:        500.0   # dbar — nominal instrument depth
-  mooring_pressure_window: 100.0   # ± dbar tolerance for bottle matching
+  mooring_pressure_window: 50.0   # ± dbar tolerance for bottle matching
 
   # TRDI instrument QC (ADCP Longranger 75 kHz, 10 m cells, 80-ping ensemble)
   correlation_good:       115      # counts — above = good
