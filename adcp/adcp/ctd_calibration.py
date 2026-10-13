@@ -981,7 +981,8 @@ def calibrate_insitu_ctd_ds(
         mooring_pressure:        float = 500,
         mooring_pressure_window: float = 50,
         mooring_pattern:         str   = "SUMO",
-        comparison_window:       str   = "6h",          # ← new
+        comparison_window:       str   = "6h",
+        calibration_exclusions:  list  = None,
         verbose:                 bool  = True,
 ) -> tuple["xr.Dataset", dict[int, DeploymentCorrection], pd.DataFrame]:
     """
@@ -1012,6 +1013,7 @@ def calibrate_insitu_ctd_ds(
     deployment_var          : deployment-ID variable name in ds
     mooring_pressure        : nominal mooring pressure (dbar) for bottle matching
     mooring_pressure_window : ± tolerance around nominal pressure (dbar)
+    calibration_exclusions  : any points to exclude (deployment num and start/end)
     verbose                 : print progress and validation report
 
     Returns
@@ -1071,6 +1073,12 @@ def calibrate_insitu_ctd_ds(
     
     # Convert string to Timedelta so callers can pass e.g. "4h" or "30min"
     _window = pd.Timedelta(comparison_window)
+
+    # ── Apply exclusions ──────────────────────────────────────────────────────
+    exclusions = calibration_exclusions or []
+    excluded_set = {(int(e["deployment"]), e["role"]) for e in exclusions}
+    if excluded_set and verbose:
+        print(f"  Excluding comparison points: {excluded_set}")
 
     for dep, (t_start, t_end) in dep_bounds.items():
         dep_data = insitu[insitu[INSITU_DEP_COL] == float(dep)].copy()

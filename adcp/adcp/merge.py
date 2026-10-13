@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import xarray as xr
 import numpy as np
+import pandas as pd
 
 from ooi_data_explorations.combine_data import combine_datasets
 
@@ -249,6 +250,55 @@ def _fix_pressure_units(ds: xr.Dataset) -> xr.Dataset:
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
+def apply_data_exclusions(
+    ds: xr.Dataset,
+    exclusions: list[dict],
+) -> xr.Dataset:
+    """
+    Mask out specific time slices per deployment.
+
+    Parameters
+    ----------
+    ds         : Dataset with 'deployment' and 'time' dimensions
+    exclusions : list of dicts with keys:
+                   deployment  : int
+                   time_start  : ISO 8601 str or None
+                   time_end    : ISO 8601 str or None
+
+    Returns
+    -------
+    ds with excluded time steps dropped
+    """
+    if not exclusions:
+        return ds
+
+    keep = np.ones(ds.sizes["time"], dtype=bool)
+
+    for excl in exclusions:
+        dep        = int(excl["deployment"])
+        time_start = pd.Timestamp(excl["time_start"]) if excl.get("time_start") else None
+        time_end   = pd.Timestamp(excl["time_end"])   if excl.get("time_end")   else None
+
+        times = pd.DatetimeIndex(ds["time"].values)
+        deps  = ds["deployment"].values.astype(int)
+
+        in_dep = deps == dep
+        in_time = np.ones(len(times), dtype=bool)
+        if time_start is not None:
+            in_time &= times >= time_start
+        if time_end is not None:
+            in_time &= times <= time_end
+
+        excluded = in_dep & in_time
+        n = excluded.sum()
+        if n > 0:
+            print(f"  Excluding {n} timesteps from deployment {dep} "
+                  f"({time_start} → {time_end})")
+        keep &= ~excluded
+
+    return ds.isel(time=keep)
+
 
 def drop_null_vars(ds: xr.Dataset) -> xr.Dataset:
     """Drop variables that are entirely NaN."""

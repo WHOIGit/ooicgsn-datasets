@@ -49,6 +49,7 @@ def calibrate_ctd(
     mooring_pressure_window: float = 100.0,
     mooring_pattern: str = "SUMO",
     comparison_window: str = "2h",
+    calibration_exclusions: list = None,
     verbose: bool = True,
 ) -> tuple[xr.Dataset, dict, object]:
     """
@@ -81,6 +82,7 @@ def calibrate_ctd(
         mooring_pressure_window = mooring_pressure_window,
         mooring_pattern         = _build_mooring_pattern(mooring_pattern),
         comparison_window       = comparison_window,
+        calibration_exclusions  = calibration_exclusions,
         verbose                 = verbose,
     )
     return cal_ctd, corrections, stats
