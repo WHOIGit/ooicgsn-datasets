@@ -1,0 +1,89 @@
+# ── Instrument identity ───────────────────────────────────────────────────────
+refdes:     CP04OSPM-RII01-02-ADCPSL010
+ctd_refdes: CP04OSSM-MFD37-03-CTDBPE000
+
+# ── OOINet data streams ───────────────────────────────────────────────────────
+streams:
+  telemetered:    adcps_jln_stc_instrument
+  recovered_host: adcps_jln_stc_instrument_recovered
+  recovered_inst: adcp_velocity_earth
+
+streams_meta:
+  telemetered:    adcps_jln_stc_metadata
+  recovered_host: adcps_jln_stc_metadata_recovered
+  recovered_inst: adcp_engineering
+
+ctd_streams:
+  telemetered:    ctdbp_cdef_dcl_instrument
+  recovered_host: ctdbp_cdef_dcl_instrument_recovered
+  recovered_inst: ctdbp_cdef_instrument_recovered
+
+# ── Deployments ───────────────────────────────────────────────────────────────
+# List deployment numbers to exclude from processing (e.g. incomplete metadata)
+deployments_to_drop: []
+
+# ── Depth regridding ──────────────────────────────────────────────────────────
+regrid:
+  depth_min:  0      # m
+  depth_max:  432    # m
+  depth_step: 8      # m
+
+# ── Bottle matching ───────────────────────────────────────────────────────────
+# Regex pattern (case-insensitive) matched against the 'Target Asset' column
+# of the water-sampling CSV to identify samples from this mooring.
+mooring_pattern: ["OSSM", "OSPM", "OS"]
+comparison_window: "3h"    # pandas Timedelta string, e.g. "1h", "30min", "4h"
+
+# ── CTD calibration exclusions ────────────────────────────────────────────────
+# List comparison points to exclude from the calibration.
+# Each entry must specify deployment and role ("start" or "end").
+# calibration_exclusions:
+#  - deployment: 2
+#    role: end
+
+# ── Data exclusions ───────────────────────────────────────────────────────────
+# Drop specific time slices from the CTD or ADCP records.
+# time_start and time_end are ISO 8601 strings; omit either to mean
+# "from the beginning" or "to the end" of that deployment.
+data_exclusions:
+  ctd:
+    - deployment: 2
+      time_start: "2015-10-22T18:00:00"
+      time_end:   null
+
+
+# ── QC thresholds ─────────────────────────────────────────────────────────────
+qc:
+  # Bottle/CTD matching
+  mooring_pressure:        450.0   # dbar — nominal instrument depth
+  mooring_pressure_window: 25.0   # ± dbar tolerance for bottle matching
+
+  # TRDI instrument QC (ADCP Longranger 75 kHz, 8 m cells, 72-ping ensemble)
+  correlation_good:       115      # counts — above = good
+  correlation_suspect:    63       # counts — above = suspect, below = fail
+  percent_good_good:      6        # percent — above = good
+  percent_good_suspect:   5        # percent — above = suspect, below = fail
+  error_velocity_suspect: 0.047    # m/s  (4.7 cm/s)
+  error_velocity_fail:    0.094    # m/s  (9.4 cm/s)
+
+  # QARTOD gross range — instrument orientation
+  roll_fail_range:    [-2000, 2000]    # cdegrees (converted to degrees in processing)
+  roll_suspect_range: [-1500, 1500]
+  pitch_fail_range:   [-2000, 2000]
+  pitch_suspect_range: [-1500, 1500]
+
+  # QARTOD gross range — scalar CTD variables
+  temperature_fail_range: [-5,  35]   # °C
+  salinity_fail_range:    [0,   42]   # PSU
+
+  # QARTOD gross range — velocity (applied via WOA depth bins)
+  velocity_fail_range: [-5, 5]        # m/s
+  velocity_suspect_std: 3             # number of std devs for suspect threshold
+
+  # Climatology test — number of std devs for suspect threshold
+  climatology_suspect_std: 2
+
+# ── Output paths ──────────────────────────────────────────────────────────────
+paths:
+  data_dir:    data/
+  results_dir: results/
